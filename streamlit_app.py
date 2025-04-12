@@ -86,14 +86,15 @@ def predict_next_days(model, scaler_X, scaler_y, X, lookback, scale_y):
         current_input = scaler_X.transform(last_row).reshape(1, 1, -1)
         for _ in range(future_days):
             pred_scaled = model.predict(current_input)[0][0]
-            pred = pred_scaled
+            pred = scaler_y.inverse_transform([[pred_scaled]])[0][0] if scale_y else pred_scaled
             future_preds.append(pred)
     else:
         last_seq_df = X[-lookback:].copy()
         current_seq = scaler_X.transform(last_seq_df[required_features]).reshape(1, lookback, -1)
         for _ in range(future_days):
             next_pred = model.predict(current_seq)[0][0]
-            
+            if scale_y and scaler_y:
+                next_pred = scaler_y.inverse_transform([[next_pred]])[0][0]
             future_preds.append(next_pred)
 
             # Slide window with static dummy row (like your training script)
