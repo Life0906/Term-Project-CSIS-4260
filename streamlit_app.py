@@ -150,6 +150,14 @@ ax.legend()
 ax.grid(True)
 st.pyplot(fig)
 
+# --- Display Forecasted Prices ---
+st.subheader("📅 5-Day Price Forecast")
+forecast_df = pd.DataFrame({
+    'Date': [d.strftime('%Y-%m-%d') for d in future_dates],
+    'Predicted Price (USD)': [f"${p:,.2f}" for p in future_preds]
+})
+st.dataframe(forecast_df, use_container_width=True)
+
 # Footer
 st.markdown("---")
 st.markdown("Built with ❤️ by Paragon Peak")
