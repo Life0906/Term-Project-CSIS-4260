@@ -33,6 +33,7 @@ def predict_next_days(model, scaler_X, scaler_y, X, lookback, scale_y):
         new_row = last_seq.iloc[-1].copy()
         last_seq = pd.concat([last_seq, pd.DataFrame([new_row])])
         last_seq = last_seq.iloc[1:]
+        last_seq = last_seq[scaler_X.feature_names_in_]  # align columns
         current_seq = scaler_X.transform(last_seq).reshape(1, lookback, X.shape[1])
 
     if scale_y:
