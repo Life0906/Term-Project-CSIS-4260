@@ -113,8 +113,8 @@ model_option = st.selectbox("Choose an LSTM Model:", (
 
 model_files = {
     "1-Day Lookback (y scaled)": ("models/lstm_1day_scaled.keras", "models/scaler_X_1day.pkl", "models/scaler_y_1day.pkl", 1, True),
-    "7-Day Lookback (y unscaled)": ("models/lstm_7day_unscaled.keras", "models/scaler_X_7day.pkl", None, 7, False),
-    "5-Day Lookback (y unscaled)": ("models/lstm_5day_unscaled.keras", "models/scaler_X_5day.pkl", None, 5, False),
+    "7-Day Lookback (y unscaled)": ("models/lstm_7day_unscaled.keras", "models/scaler_X_1day.pkl", None, 7, False),
+    "5-Day Lookback (y unscaled)": ("models/lstm_5day_unscaled.keras", "models/scaler_X_1day.pkl", None, 5, False),
 }
 
 with st.spinner("Loading model and generating predictions..."):
