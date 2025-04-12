@@ -84,25 +84,22 @@ def predict_next_days(model, scaler_X, scaler_y, X, lookback, scale_y):
     if lookback == 1:
         last_row = X.iloc[-1:][required_features]
         current_input = scaler_X.transform(last_row).reshape(1, 1, -1)
-
         for _ in range(future_days):
             pred_scaled = model.predict(current_input)[0][0]
             pred = scaler_y.inverse_transform([[pred_scaled]])[0][0] if scale_y else pred_scaled
             future_preds.append(pred)
     else:
-        recent_seq = X[-lookback:].copy()
+        last_seq_df = X[-lookback:].copy()
+        current_seq = scaler_X.transform(last_seq_df[required_features]).reshape(1, lookback, -1)
         for _ in range(future_days):
-            seq_scaled = scaler_X.transform(recent_seq[required_features])
-            input_seq = seq_scaled.reshape(1, lookback, -1)
-            next_pred = model.predict(input_seq)[0][0]
-            if scale_y:
-                next_pred = scaler_y.inverse_transform([[next_pred]])[0][0]
+            next_pred = model.predict(current_seq)[0][0]
             future_preds.append(next_pred)
 
-            # Slide the window with dummy new row based on the last one
-            new_row = recent_seq.iloc[-1].copy()
-            recent_seq = pd.concat([recent_seq, pd.DataFrame([new_row], columns=recent_seq.columns)])
-            recent_seq = recent_seq.iloc[1:]
+            # Slide window with static dummy row (like your training script)
+            new_input = last_seq_df.iloc[-1].copy()
+            last_seq_df = pd.concat([last_seq_df, pd.DataFrame([new_input], columns=last_seq_df.columns)])
+            last_seq_df = last_seq_df.iloc[1:]
+            current_seq = scaler_X.transform(last_seq_df[required_features]).reshape(1, lookback, -1)
 
     last_date = X.index[-1]
     future_dates = [last_date + pd.Timedelta(days=i+1) for i in range(future_days)]
