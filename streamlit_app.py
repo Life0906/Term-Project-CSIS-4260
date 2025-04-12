@@ -24,12 +24,12 @@ def calculate_rsi(data, window=14):
     return 100 - (100 / (1 + rs))
 
 # Load live BTC data from Yahoo Finance
+
 def load_data():
     btc = yf.Ticker("BTC-USD")
     df = btc.history(period="10y", interval="1d")
     df = df.drop(columns=['Dividends', 'Stock Splits'])
 
-    # Feature engineering
     df['RSI'] = calculate_rsi(df)
     macd_line = df['Close'].ewm(span=12).mean() - df['Close'].ewm(span=26).mean()
     signal_line = macd_line.ewm(span=9).mean()
@@ -80,22 +80,24 @@ required_features = [
 def predict_next_days(model, scaler_X, scaler_y, X, lookback, scale_y):
     future_days = 5
     future_preds = []
-    last_seq = X[-lookback:].copy()
-    last_seq = pd.DataFrame(last_seq, columns=required_features)
-    current_seq = scaler_X.transform(last_seq).reshape(1, lookback, -1)
 
-    for _ in range(future_days):
-        pred_scaled = model.predict(current_seq)[0][0]
-        future_preds.append(pred_scaled)
+    if lookback == 1:
+        last_row = X.iloc[-1:][required_features]
+        current_input = scaler_X.transform(last_row).reshape(1, 1, -1)
 
-        new_row = last_seq.iloc[-1].copy()
-        last_seq = pd.concat([last_seq, pd.DataFrame([new_row], columns=last_seq.columns)])
-        last_seq = last_seq.iloc[1:]
-        last_seq = pd.DataFrame(last_seq, columns=required_features)
-        current_seq = scaler_X.transform(last_seq).reshape(1, lookback, -1)
-
-    if scale_y:
-        future_preds = scaler_y.inverse_transform(np.array(future_preds).reshape(-1, 1)).flatten()
+        for _ in range(future_days):
+            pred_scaled = model.predict(current_input)[0][0]
+            if scale_y:
+                pred = scaler_y.inverse_transform([[pred_scaled]])[0][0]
+            else:
+                pred = pred_scaled
+            future_preds.append(pred)
+    else:
+        last_seq = X[-lookback:].copy()[required_features]
+        for _ in range(future_days):
+            current_seq = scaler_X.transform(last_seq).reshape(1, lookback, -1)
+            pred = model.predict(current_seq)[0][0]
+            future_preds.append(pred)
 
     last_date = X.index[-1]
     future_dates = [last_date + pd.Timedelta(days=i+1) for i in range(future_days)]
@@ -122,7 +124,7 @@ with st.spinner("Loading model and generating predictions..."):
     model_path, scaler_X_path, scaler_y_path, lookback, scale_y = model_files[model_option]
     model = load_model(model_path)
     scaler_X = joblib.load(scaler_X_path)
-    scaler_y = joblib.load(scaler_y_path) if scaler_y_path is not None else None
+    scaler_y = joblib.load(scaler_y_path) if scaler_y_path else None
     X = df[required_features]
     future_dates, future_preds = predict_next_days(model, scaler_X, scaler_y, X, lookback, scale_y)
 
