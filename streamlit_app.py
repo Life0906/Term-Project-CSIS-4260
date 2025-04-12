@@ -152,4 +152,4 @@ st.pyplot(fig)
 
 # Footer
 st.markdown("---")
-st.markdown("Built with ❤️ by Paragon Peak")
+st.markdown("Built with ❤️ by Arsh Gupta")
