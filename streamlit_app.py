@@ -87,17 +87,20 @@ def predict_next_days(model, scaler_X, scaler_y, X, lookback, scale_y):
 
         for _ in range(future_days):
             pred_scaled = model.predict(current_input)[0][0]
-            if scale_y:
-                pred = scaler_y.inverse_transform([[pred_scaled]])[0][0]
-            else:
-                pred = pred_scaled
+            pred = scaler_y.inverse_transform([[pred_scaled]])[0][0] if scale_y else pred_scaled
             future_preds.append(pred)
     else:
-        last_seq = X[-lookback:].copy()[required_features]
+        recent_seq = X[-lookback:].copy()
         for _ in range(future_days):
-            current_seq = scaler_X.transform(last_seq).reshape(1, lookback, -1)
-            pred = model.predict(current_seq)[0][0]
-            future_preds.append(pred)
+            seq_scaled = scaler_X.transform(recent_seq[required_features])
+            input_seq = seq_scaled.reshape(1, lookback, -1)
+            next_pred = model.predict(input_seq)[0][0]
+            future_preds.append(next_pred)
+
+            # Slide the window with dummy new row based on the last one
+            new_row = recent_seq.iloc[-1].copy()
+            recent_seq = pd.concat([recent_seq, pd.DataFrame([new_row], columns=recent_seq.columns)])
+            recent_seq = recent_seq.iloc[1:]
 
     last_date = X.index[-1]
     future_dates = [last_date + pd.Timedelta(days=i+1) for i in range(future_days)]
