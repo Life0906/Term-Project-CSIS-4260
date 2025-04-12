@@ -95,6 +95,8 @@ def predict_next_days(model, scaler_X, scaler_y, X, lookback, scale_y):
             seq_scaled = scaler_X.transform(recent_seq[required_features])
             input_seq = seq_scaled.reshape(1, lookback, -1)
             next_pred = model.predict(input_seq)[0][0]
+            if scale_y:
+                next_pred = scaler_y.inverse_transform([[next_pred]])[0][0]
             future_preds.append(next_pred)
 
             # Slide the window with dummy new row based on the last one
